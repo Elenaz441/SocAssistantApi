@@ -20,6 +20,8 @@ class StepMetric(BaseModel):
     prompt_tokens: Optional[int] = None
     completion_tokens: Optional[int] = None
     total_tokens: Optional[int] = None
+    attempts: int = 1
+    retries: int = 0
     success: bool
     error: Optional[str] = None
 

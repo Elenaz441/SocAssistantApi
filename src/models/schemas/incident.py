@@ -1,6 +1,10 @@
+from typing import Optional
+
 from pydantic import (
     BaseModel,
     Field,
+    ConfigDict,
+    model_validator,
 )
 
 from src.models.enums import (
@@ -12,9 +16,20 @@ from src.models.enums import (
 
 
 class Classification(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     category: IncidentCategory = Field(description="Основной тип ИБ-инцидента")
     severity: Severity = Field(description="Серьёзность по шкале low/medium/high/critical")
     impact: Impact = Field(description="Затронутая составляющая CIA")
+    confidence: float = Field(ge=0.0, le=1.0, description="Уверенность модели в классификации")
+    suspected_actor: Optional[str] = Field(default=None, description="Предполагаемый актор, если известен")
+    requires_escalation: bool = Field(default=False, description="Требуется ли немедленная эскалация")
+
+    @model_validator(mode="after")
+    def critical_must_escalate(self):
+        if self.severity == "critical" and not self.requires_escalation:
+            raise ValueError("severity=critical требует requires_escalation=True")
+        return self
 
 
 class Entities(BaseModel):

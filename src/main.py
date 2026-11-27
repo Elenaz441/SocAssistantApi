@@ -10,6 +10,7 @@ from src.routers.tasks import router as tasks_router
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     llm_client = GigaChatClient()
+    app.state.llm_client = llm_client
     app.state.incident_workflows = IncidentWorkflows(llm_client)
     yield
 
