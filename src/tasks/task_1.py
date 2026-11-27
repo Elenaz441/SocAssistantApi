@@ -19,7 +19,8 @@ async def run_task1(workflows):
 
                 incident = await workflow(
                     case["text"],
-                    trace
+                    trace,
+                    use_retry=False,
                 )
 
             except Exception as exc:

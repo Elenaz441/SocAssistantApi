@@ -37,14 +37,16 @@ class IncidentWorkflows:
     async def one_shot(
         self,
         text: str,
-        trace: list[StepMetric]
+        trace: list[StepMetric],
+        use_retry: bool = True
     ) -> Incident:
-        core = await self.llm.ask_json(
+        core = await self._ask(
             schema=IncidentCore,
             instruction=ONE_SHOT_TASK,
             data=self._payload(text),
             stage="one_shot",
-            trace=trace
+            trace=trace,
+            use_retry=use_retry
         )
 
         return Incident(
@@ -56,19 +58,21 @@ class IncidentWorkflows:
     async def sequential(
         self,
         text: str,
-        trace: list[StepMetric]
+        trace: list[StepMetric],
+        use_retry: bool = True
     ) -> Incident:
         # Этап 1. Классификация
-        classification = await self.llm.ask_json(
+        classification = await self._ask(
             schema=Classification,
             instruction=CLASSIFY_TASK,
             data=self._payload(text),
             stage="classify",
-            trace=trace
+            trace=trace,
+            use_retry=use_retry
         )
 
         # Этап 2. Извлечение IOC
-        entities = await self.llm.ask_json(
+        entities = await self._ask(
             schema=Entities,
             instruction=ENTITIES_TASK,
             data=self._payload(
@@ -76,11 +80,12 @@ class IncidentWorkflows:
                 classification=classification.model_dump()
             ),
             stage="extract_entities",
-            trace=trace
+            trace=trace,
+            use_retry=use_retry
         )
 
         # Этап 3. Анализ
-        analysis = await self.llm.ask_json(
+        analysis = await self._ask(
             schema=Analysis,
             instruction=ANALYSIS_TASK,
             data=self._payload(
@@ -89,11 +94,12 @@ class IncidentWorkflows:
                 entities=entities.model_dump()
             ),
             stage="analyze",
-            trace=trace
+            trace=trace,
+            use_retry=use_retry
         )
 
         # Этап 4. Реагирование
-        response = await self.llm.ask_json(
+        response = await self._ask(
             schema=Response,
             instruction=RESPONSE_TASK,
             data=self._payload(
@@ -103,7 +109,8 @@ class IncidentWorkflows:
                 analysis=analysis.model_dump()
             ),
             stage="respond",
-            trace=trace
+            trace=trace,
+            use_retry=use_retry
         )
 
         # Объединяем результаты всех этапов
@@ -115,4 +122,30 @@ class IncidentWorkflows:
             team=TEAM_BY_CATEGORY[
                 classification.category
             ]
+        )
+
+    async def _ask(
+        self,
+        schema,
+        instruction,
+        data,
+        stage,
+        trace,
+        use_retry=True,
+    ):
+        if use_retry:
+            return await self.llm.ask_json_with_retry(
+                schema=schema,
+                instruction=instruction,
+                data=data,
+                stage=stage,
+                trace=trace,
+                max_retries=2,
+            )
+        return await self.llm.ask_json(
+            schema=schema,
+            instruction=instruction,
+            data=data,
+            stage=stage,
+            trace=trace,
         )
