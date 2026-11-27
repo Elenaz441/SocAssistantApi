@@ -1,7 +1,14 @@
-from typing import Optional
+from pydantic import (
+    BaseModel,
+    Field,
+)
 
-from pydantic import BaseModel, Field
-from .enums import IncidentCategory, Severity, Impact, Team, WorkflowName
+from src.models.enums import (
+    IncidentCategory,
+    Severity,
+    Impact,
+    Team,
+)
 
 
 class Classification(BaseModel):
@@ -33,31 +40,3 @@ class IncidentCore(Classification, Entities, Analysis, Response):
 
 class Incident(IncidentCore):
     team: Team
-
-
-class AnalyzeRequest(BaseModel):
-    incident_text: str = Field(min_length=5, max_length=20000)
-    workflow: WorkflowName = "sequential"
-
-
-class StepMetric(BaseModel):
-    stage: str
-    latency_s: float
-    prompt_tokens: Optional[int] = None
-    completion_tokens: Optional[int] = None
-    total_tokens: Optional[int] = None
-    success: bool
-    error: Optional[str] = None
-
-
-class AnalyzeResponse(BaseModel):
-    success: bool
-    workflow: WorkflowName
-    incident: Optional[Incident] = None
-    wall_time_s: float
-    api_calls: int
-    prompt_tokens: int
-    completion_tokens: int
-    total_tokens: int
-    steps: list[StepMetric] = Field(default_factory=list)
-    error: Optional[str] = None

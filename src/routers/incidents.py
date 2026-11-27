@@ -1,7 +1,7 @@
 import time
 from fastapi import APIRouter, HTTPException, Request
 from src.config import settings
-from src.models.schemas import (
+from src.models import (
     AnalyzeRequest,
     AnalyzeResponse,
     StepMetric

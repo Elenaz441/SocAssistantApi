@@ -4,6 +4,7 @@ from src.config import settings
 from src.llm.client import GigaChatClient
 from src.llm.workflows import IncidentWorkflows
 from src.routers.incidents import router as incidents_router
+from src.routers.tasks import router as tasks_router
 
 
 @asynccontextmanager
@@ -20,6 +21,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 app.include_router(incidents_router)
+app.include_router(tasks_router)
 
 
 @app.get("/health", tags=["Сервис"])
